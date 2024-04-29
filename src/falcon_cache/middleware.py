@@ -1,4 +1,4 @@
-from src.falcon_cache.cache import APICache
+from cache import APICache
 from redis import Redis
 
 
