@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = 'falcon-cache'
-version = "0.0.6"
+version = "0.1.0"
 requires-python = '>=3.6'
 dependencies = [
     "msgpack==1.0.5",
-    "redis_helper @ git+https://github.com/metallerok/redis-helper",
+    "redis_helper @ git+https://github.com/metallerok/redis-helper@v0.0.1",
 ]
 
 [project.optional-dependencies]

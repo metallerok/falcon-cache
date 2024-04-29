@@ -79,7 +79,7 @@ class APICache:
 
         def decorator(func, *args):
             def wrapper(cls, req, resp, *args, **kwargs):
-                if not APICache.enabled:
+                if not self.enabled:
                     func(cls, req, resp, *args, **kwargs)
                     return
 
@@ -128,6 +128,10 @@ class APICache:
             return wrapper
 
         return decorator
+
+    def invalidate_by_tag(self, tag: str):
+        redis_helper = RedisHelper(self.redis)
+        redis_helper.delete_by_tag(tag)
 
     @staticmethod
     def _increase_hit_counter(redis: Redis, key: str):
