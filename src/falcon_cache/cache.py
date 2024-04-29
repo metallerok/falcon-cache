@@ -5,7 +5,7 @@ import datetime as dt
 import logging
 from typing import List
 from redis import Redis
-from src.lib.redis import RedisHelper
+from redis_helper.main import RedisHelper
 
 logger = logging.getLogger(__name__)
 
