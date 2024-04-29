@@ -1,5 +1,5 @@
-from cache import APICache
 from redis import Redis
+from falcon_cache.cache import APICache
 
 
 class CacheMiddleware:
