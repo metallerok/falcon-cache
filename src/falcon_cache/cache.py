@@ -27,7 +27,7 @@ class APICache:
     @staticmethod
     def _make_cache_key(req: falcon.Request):
         user_id = req.context.get("current_user_id")
-        return (f"API_CACHE:{req.forwarded_host}:ORIGIN:{req.get_header('origin')}"
+        return (f"API_CACHE:{req.forwarded_host}:ORIGIN:{req.get_header('origin')}:ACCEPT:{req.get_header('accept')}"
                 f":USER:{user_id}:{req.relative_uri}:{req.params}")
 
     def make_cache_key(self, req: falcon.Request) -> str:

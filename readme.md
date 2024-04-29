@@ -38,6 +38,17 @@ Now you can invalidate cache by tag
 api_cache.invalidate_by_tag(tag="task_id:1")
 ```
 
+## Make your own cache key creation method
+```python
+def make_cache_key(req: falcon.Request) -> str:
+    user_id = req.context.get("current_user_id")
+    return (f"API_CACHE:{req.forwarded_host}:ORIGIN:{req.get_header('origin')}:ACCEPT:{req.get_header('accept')}"
+            f":USER:{user_id}:{req.relative_uri}:{req.params}")
+
+app_globals.api_cache = APICache(redis=redis_conn)
+app_globals.api_cache.set_cache_key_maker(make_cache_key)
+```
+
 # Disable cache for tests
 ```python
 api_cache = APICache(redis=redis_conn)
