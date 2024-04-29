@@ -3,7 +3,7 @@ import io
 import falcon
 import datetime as dt
 import logging
-from typing import List
+from typing import List, Callable
 from redis import Redis
 from redis_helper.main import RedisHelper
 
@@ -20,11 +20,21 @@ class APICache:
     API_CACHE_HIT_COUNTER_KEY = "API_CACHE:HIT_COUNTER"
     API_CACHE_MISS_COUNTER_KEY = "API_CACHE:MISS_COUNTER"
 
+    def __init__(self, redis: Redis):
+        self.redis = redis
+        self._cache_key_maker = self._make_cache_key
+
     @staticmethod
-    def make_cache_key(req: falcon.Request):
+    def _make_cache_key(req: falcon.Request):
         user_id = req.context.get("current_user_id")
         return (f"API_CACHE:{req.forwarded_host}:ORIGIN:{req.get_header('origin')}"
                 f":USER:{user_id}:{req.relative_uri}:{req.params}")
+
+    def make_cache_key(self, req: falcon.Request) -> str:
+        return self._cache_key_maker(req)
+
+    def set_cache_key_maker(self, func: Callable[[falcon.Request], str]):
+        self._cache_key_maker = func
 
     @staticmethod
     def _serialize_response(resp: falcon.Response):
@@ -47,8 +57,8 @@ class APICache:
         resp.set_headers(headers)
         resp.complete = True
 
-    @staticmethod
     def cached(
+            self,
             timeout: int,
             tags_templates: List[str] = None,
             stream_length_restriction: int = 512,
@@ -62,26 +72,25 @@ class APICache:
                     func(cls, req, resp, *args, **kwargs)
                     return
 
-                redis: Redis = req.context["redis"]
-                redis_helper: RedisHelper = RedisHelper(redis)
-                key = APICache.make_cache_key(req)
+                redis_helper: RedisHelper = RedisHelper(self.redis)
+                key = self.make_cache_key(req)
 
                 logger.debug(f"APICache used for key: {key}")
 
                 if req.method in APICache.invalidate_methods:
-                    redis.delete(key)
+                    self.redis.delete(key)
 
                 if req.method in APICache.cache_methods:
-                    data = redis.get(key)
+                    data = self.redis.get(key)
 
                     if data:
                         APICache._deserialize_response(resp, data)
                         resp.set_header(APICache.CACHE_HEADER, 'Hit')
-                        APICache._increase_hit_counter(redis, key)
+                        self._increase_hit_counter(self.redis, key)
                         return
                     else:
                         resp.set_header(APICache.CACHE_HEADER, 'Miss')
-                        APICache._increase_miss_counter(redis, key)
+                        self._increase_miss_counter(self.redis, key)
 
                 func(cls, req, resp, *args, **kwargs)
 
