@@ -43,8 +43,13 @@ class APICache:
             stream = resp.stream.read()
             resp.stream = io.BytesIO(stream)
 
+        if hasattr(resp, "text"):
+            text = resp.text
+        else:  # resp.body is deprecated
+            text = resp.body
+
         value = msgpack.packb(
-            [resp.status, resp.content_type, resp.text, stream, resp.headers],
+            [resp.status, resp.content_type, text, stream, resp.headers],
             use_bin_type=True
         )
 
@@ -52,7 +57,13 @@ class APICache:
 
     @staticmethod
     def _deserialize_response(resp: falcon.Response, data):
-        resp.status, resp.content_type, resp.text, stream, headers = msgpack.unpackb(data, raw=False)
+        resp.status, resp.content_type, text, stream, headers = msgpack.unpackb(data, raw=False)
+
+        if hasattr(resp, "text"):
+            setattr(resp, "text", text)
+        else:
+            setattr(resp, "body", text)
+
         resp.stream = io.BytesIO(stream) if stream else None
         resp.set_headers(headers)
         resp.complete = True
